@@ -101,8 +101,15 @@ export const UserSeeder = async () => {
     const hashedPassword = await bcrypt.hash('demo123', 12);
     console.log('    Generated demo password hash');
 
+    const demoUsersWithAuth = demoUsers.map((u) => ({
+      ...u,
+      password_hash: hashedPassword,
+      totp_enabled: false,
+      totp_secret_encrypted: null,
+    }));
+
     // Create users using bulkCreate
-    const createdUsers = await User.bulkCreate(demoUsers, {
+    const createdUsers = await User.bulkCreate(demoUsersWithAuth, {
       validate: true,
       individualHooks: false, // Disable hooks for bulk insert for performance
     });

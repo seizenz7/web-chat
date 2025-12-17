@@ -22,8 +22,12 @@ export function notFoundHandler(req: Request, res: Response) {
   logger.warn(`Not found: ${req.method} ${req.path}`);
 
   res.status(404).json({
-    error: `Cannot ${req.method} ${req.path}`,
+    status: 'error',
+    statusCode: 404,
     message: 'Endpoint not found',
+    error: `Cannot ${req.method} ${req.path}`,
+    code: 'NOT_FOUND',
+    timestamp: new Date().toISOString(),
   });
 }
 
@@ -77,5 +81,7 @@ export function errorHandler(
     statusCode,
     message: error.message,
     ...formatError(error, config.isDev),
+    timestamp: new Date().toISOString(),
+    path: req.path,
   });
 }

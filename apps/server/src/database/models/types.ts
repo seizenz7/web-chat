@@ -45,6 +45,14 @@ export interface UserAttributes {
   id: string; // UUID primary key
   username: string; // Unique username (lowercase, alphanumeric + underscores)
   email: string; // Unique email address (lowercase)
+
+  // bcrypt hash of the user's password (never sent to clients)
+  password_hash: string;
+
+  // Optional TOTP-based 2FA
+  totp_enabled: boolean;
+  totp_secret_encrypted?: string;
+
   display_name: string; // User's display name (can contain special characters)
   avatar_url?: string; // Profile picture URL
   status?: 'online' | 'offline' | 'away' | 'busy'; // Current presence status

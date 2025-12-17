@@ -10,14 +10,18 @@
  */
 
 import React from 'react';
-import { Box, Container, Flex, Heading, HStack, Link } from '@chakra-ui/react';
+import { Box, Button, Container, Flex, Heading, HStack, Link, Text } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
+import { useAuthStore } from '../stores/authStore';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export default function Layout({ children }: LayoutProps) {
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
   return (
     <Flex direction="column" minH="100vh" bg="gray.50">
       {/* Header/Navigation */}
@@ -27,17 +31,42 @@ export default function Layout({ children }: LayoutProps) {
             <Heading as="h1" size="lg" color="blue.600">
               PERN App
             </Heading>
-            <HStack spacing={6}>
+            <HStack spacing={6} align="center">
               <Link as={RouterLink} to="/" _hover={{ textDecoration: 'none', color: 'blue.600' }}>
                 Home
               </Link>
-              <Link
-                as={RouterLink}
-                to="/examples"
-                _hover={{ textDecoration: 'none', color: 'blue.600' }}
-              >
+              <Link as={RouterLink} to="/examples" _hover={{ textDecoration: 'none', color: 'blue.600' }}>
                 Examples
               </Link>
+
+              {user ? (
+                <>
+                  <Link as={RouterLink} to="/account" _hover={{ textDecoration: 'none', color: 'blue.600' }}>
+                    Account
+                  </Link>
+                  <Text fontSize="sm" color="gray.500">
+                    Signed in as {user.username}
+                  </Text>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      void logout();
+                    }}
+                  >
+                    Log out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link as={RouterLink} to="/login" _hover={{ textDecoration: 'none', color: 'blue.600' }}>
+                    Log in
+                  </Link>
+                  <Link as={RouterLink} to="/register" _hover={{ textDecoration: 'none', color: 'blue.600' }}>
+                    Register
+                  </Link>
+                </>
+              )}
             </HStack>
           </Flex>
         </Container>

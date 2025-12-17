@@ -11,6 +11,7 @@
  */
 
 import axios from 'axios';
+import { useAuthStore } from '../stores/authStore';
 
 /**
  * Create and return a configured Axios instance
@@ -18,10 +19,16 @@ import axios from 'axios';
  */
 export function useApiClient() {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const accessToken = useAuthStore((s) => s.accessToken);
 
   const apiClient = axios.create({
     baseURL: apiUrl,
     timeout: 10000, // 10 seconds
+
+    // Important for refresh-token cookie auth flows.
+    // Even though JS can't read the httpOnly cookie, the browser can still send it.
+    withCredentials: true,
+
     headers: {
       'Content-Type': 'application/json',
     },
@@ -33,11 +40,12 @@ export function useApiClient() {
    */
   apiClient.interceptors.request.use(
     (config) => {
-      // Add auth token if available
-      // const token = localStorage.getItem('auth_token');
-      // if (token) {
-      //   config.headers.Authorization = `Bearer ${token}`;
-      // }
+      // Access token is stored in memory (Zustand), not localStorage.
+      // This reduces how long a stolen token can be reused.
+      if (accessToken) {
+        config.headers = config.headers ?? {};
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      }
 
       console.debug(`[API] ${config.method?.toUpperCase()} ${config.url}`);
       return config;

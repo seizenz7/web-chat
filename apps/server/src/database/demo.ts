@@ -6,7 +6,7 @@
  */
 
 import { initializeChatDatabase } from './integration';
-import { config } from '../../config';
+import { config } from '../config';
 
 const demo = async () => {
   try {

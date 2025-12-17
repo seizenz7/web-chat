@@ -16,6 +16,14 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   public id!: string;
   public username!: string;
   public email!: string;
+
+  // SECURITY: Never return this value from API responses.
+  // bcrypt is intentionally slow, which makes offline password cracking harder.
+  public password_hash!: string;
+
+  public totp_enabled!: boolean;
+  public totp_secret_encrypted?: string;
+
   public display_name!: string;
   public avatar_url?: string;
   public status?: 'online' | 'offline' | 'away' | 'busy';
@@ -56,6 +64,22 @@ export const initUserModel = (sequelize: any) => {
         validate: {
           isEmail: true,
         },
+      },
+      password_hash: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        comment: 'bcrypt hash of password (never sent to clients)',
+      },
+      totp_enabled: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: 'Whether user has enabled TOTP-based 2FA',
+      },
+      totp_secret_encrypted: {
+        type: DataTypes.STRING(1024),
+        allowNull: true,
+        comment: 'Encrypted TOTP seed (AES-256-GCM)',
       },
       display_name: {
         type: DataTypes.STRING(100),
@@ -114,6 +138,10 @@ export const initUserModel = (sequelize: any) => {
         {
           fields: ['last_seen_at'],
           name: 'idx_users_last_seen_at',
+        },
+        {
+          fields: ['totp_enabled'],
+          name: 'idx_users_totp_enabled',
         },
       ],
       hooks: {
