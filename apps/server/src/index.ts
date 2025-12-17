@@ -24,6 +24,8 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { healthCheckRouter } from './routes/healthCheck';
 import { exampleRouter } from './routes/example';
 import { authRouter } from './routes/auth';
+import { conversationRouter } from './routes/conversations';
+import { messageRouter } from './routes/messages';
 import { initializeSocket } from './services/socketService';
 import { initializeQueues } from './services/queueService';
 import { initializeChatDatabase } from './database/integration';
@@ -84,6 +86,8 @@ app.use(requestLogger);
 app.use('/api/health', healthCheckRouter);
 app.use('/api/example', exampleRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/conversations', conversationRouter);
+app.use('/api/messages', messageRouter);
 
 // API root endpoint
 app.get('/api', (req, res) => {
@@ -95,6 +99,8 @@ app.get('/api', (req, res) => {
       health: '/api/health',
       examples: '/api/example',
       auth: '/api/auth',
+      conversations: '/api/conversations',
+      messages: '/api/messages',
     },
   });
 });
