@@ -70,7 +70,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
   const start = Date.now();
 
   // Hook into res.end to capture status code and response time
-  const originalEnd = res.end;
+  const originalEnd = res.end.bind(res);
 
   res.end = function (...args: any[]) {
     const duration = Date.now() - start;
@@ -89,8 +89,8 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
       logger.info(logMessage, logData);
     }
 
-    originalEnd.apply(res, args);
-  };
+    return originalEnd(...args) as any;
+  } as any;
 
   next();
 }

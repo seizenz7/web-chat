@@ -27,6 +27,21 @@ export const API_ENDPOINTS = {
   REGISTER: '/auth/register',
   REFRESH_TOKEN: '/auth/refresh',
 
+  // Conversations (Chat)
+  CONVERSATIONS: '/conversations',
+  CONVERSATION_DETAIL: (id: string) => `/conversations/${id}`,
+  CONVERSATIONS_DIRECT: '/conversations/direct',
+  CONVERSATIONS_GROUP: '/conversations/group',
+  CONVERSATION_PARTICIPANTS: (id: string) => `/conversations/${id}/participants`,
+  CONVERSATION_PARTICIPANT_REMOVE: (convId: string, userId: string) =>
+    `/conversations/${convId}/participants/${userId}`,
+
+  // Messages (Chat)
+  MESSAGES: '/messages',
+  CONVERSATION_MESSAGES: (conversationId: string) => `/messages/${conversationId}`,
+  MESSAGE_STATUS: (messageId: string) => `/messages/${messageId}/status`,
+  MESSAGE_REACTIONS: (messageId: string) => `/messages/${messageId}/reactions`,
+
   // Jobs
   JOB_STATUS: (jobId: string | number) => `/jobs/${jobId}`,
 };
@@ -102,6 +117,8 @@ export const JOB_QUEUES = {
 
 /**
  * Socket.io Events
+ *
+ * Real-time chat events for Socket.io communication
  */
 export const SOCKET_EVENTS = {
   // Connection
@@ -109,20 +126,40 @@ export const SOCKET_EVENTS = {
   DISCONNECT: 'disconnect',
   ERROR: 'error',
 
-  // Messages
+  // Presence Events
+  // Emitted by client to indicate online/offline status
+  PRESENCE_ONLINE: 'presence:online',
+  PRESENCE_OFFLINE: 'presence:offline',
+  USER_STATUS_CHANGED: 'user:status_changed',
+
+  // Typing Events
+  // Used for "User is typing..." indicators
+  CHAT_TYPING: 'chat:typing',
+  CHAT_USER_TYPING: 'chat:user_typing',
+
+  // Message Events
+  CHAT_MESSAGE_SEND: 'chat:message_send',
+  CHAT_MESSAGE_RECEIVED: 'chat:message_received',
+  CHAT_MESSAGE_EDITED: 'chat:message_edited',
+  CHAT_MESSAGE_DELETED: 'chat:message_deleted',
+
+  // Message Status Events
+  CHAT_MESSAGE_DELIVERED: 'chat:message_delivered',
+  CHAT_MESSAGE_READ: 'chat:message_read',
+  CHAT_MESSAGE_STATUS_UPDATED: 'chat:message_status_updated',
+
+  // Reaction Events
+  CHAT_REACTION_ADDED: 'chat:reaction_added',
+  CHAT_REACTION_REMOVED: 'chat:reaction_removed',
+
+  // Legacy events (kept for compatibility)
   MESSAGE: 'message',
   MESSAGE_BROADCAST: 'message_broadcast',
-
-  // Rooms
   JOIN_ROOM: 'join_room',
   LEAVE_ROOM: 'leave_room',
   USER_JOINED: 'user_joined',
   USER_LEFT: 'user_left',
-
-  // Typing
   TYPING: 'typing',
-
-  // Data updates
   DATA_UPDATE: 'data_update',
 } as const;
 
