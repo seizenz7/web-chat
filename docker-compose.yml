@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  # Role: Main data store for the application
+  # Runs on port 5432 (default PostgreSQL port)
+  # Data persists in pgdata/ volume (mounted locally)
+  postgres:
+    image: postgres:16-alpine
+    container_name: pern-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pern_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pern-network
+
+  # Redis Cache/Queue Service
+  # Role: Caching layer and job queue backend for Bull
+  # Runs on port 6379 (default Redis port)
+  # Used for: Session storage, real-time features via Socket.io, Bull job queue
+  redis:
+    image: redis:7-alpine
+    container_name: pern-redis
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pern-network
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  pern-network:
+    driver: bridge
