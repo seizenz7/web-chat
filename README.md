@@ -7,6 +7,7 @@ A production-ready PostgreSQL + Express + React + Node.js monorepo scaffold with
 - [Architecture Overview](#architecture-overview)
 - [Tech Stack](#tech-stack)
 - [Quick Start](#quick-start)
+- [Authentication (Week 2)](#authentication-week-2)
 - [Project Structure](#project-structure)
 - [Development Workflow](#development-workflow)
 - [Docker Services](#docker-services)
@@ -184,6 +185,19 @@ yarn docker:logs
 # Stop Docker services
 yarn docker:down
 ```
+
+---
+
+## Authentication (Week 2)
+
+This scaffold includes a full **bcrypt + TOTP + JWT access/refresh** auth flow:
+
+- Backend endpoints: `/api/auth/register`, `/api/auth/login`, `/api/auth/me`, `/api/auth/refresh`, `/api/auth/logout`
+- Rate limiting on sensitive endpoints (login/register/refresh)
+- Refresh tokens in **httpOnly cookies**, access tokens kept **in memory** (Zustand)
+- Refresh rotation and session storage (`auth_sessions` table)
+
+See: **[AUTH_FLOW.md](./AUTH_FLOW.md)** for request/response samples, sequence diagrams, and troubleshooting tips.
 
 ---
 

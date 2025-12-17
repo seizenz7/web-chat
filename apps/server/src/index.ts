@@ -23,13 +23,18 @@ import { logger, requestLogger } from './utils/logging';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { healthCheckRouter } from './routes/healthCheck';
 import { exampleRouter } from './routes/example';
+import { authRouter } from './routes/auth';
 import { initializeSocket } from './services/socketService';
 import { initializeQueues } from './services/queueService';
+import { initializeChatDatabase } from './database/integration';
 
 // Load environment variables from .env file
 dotenv.config();
 
 const app = express();
+
+// If you're behind a proxy (Render/Heroku/Nginx), this makes req.ip work correctly.
+app.set('trust proxy', 1);
 
 // Create HTTP server for Socket.io compatibility
 const httpServer = createServer(app);
@@ -37,7 +42,7 @@ const httpServer = createServer(app);
 // Initialize Socket.io for real-time communication
 const io = new SocketIOServer(httpServer, {
   cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
+    origin: config.cors.origin,
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -58,7 +63,7 @@ app.use(helmet()); // Adds various HTTP headers for security
 // CORS middleware - Allow requests from frontend
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
+    origin: config.cors.origin,
     credentials: true,
   })
 );
@@ -74,17 +79,11 @@ app.use(requestLogger);
  * ============================
  * ROUTE SETUP
  * ============================
- *
- * Routes map HTTP paths to request handlers (controllers)
- * Pattern: app.METHOD(path, handler)
- * - GET: Fetch data
- * - POST: Create data
- * - PUT/PATCH: Update data
- * - DELETE: Remove data
  */
 
 app.use('/api/health', healthCheckRouter);
 app.use('/api/example', exampleRouter);
+app.use('/api/auth', authRouter);
 
 // API root endpoint
 app.get('/api', (req, res) => {
@@ -95,6 +94,7 @@ app.get('/api', (req, res) => {
     services: {
       health: '/api/health',
       examples: '/api/example',
+      auth: '/api/auth',
     },
   });
 });
@@ -105,8 +105,6 @@ app.get('/api', (req, res) => {
  * ============================
  *
  * These must come AFTER all route definitions.
- * They handle requests that didn't match any route,
- * and catch errors from controllers/services.
  */
 
 app.use(notFoundHandler);
@@ -116,12 +114,6 @@ app.use(errorHandler);
  * ============================
  * SOCKET.IO REAL-TIME SETUP
  * ============================
- *
- * Socket.io handles WebSocket connections for features like:
- * - Real-time notifications
- * - Live chat
- * - Collaborative editing
- * - Live data updates
  */
 
 initializeSocket(io);
@@ -130,14 +122,6 @@ initializeSocket(io);
  * ============================
  * JOB QUEUE SETUP
  * ============================
- *
- * Bull runs background jobs asynchronously:
- * - Sending emails
- * - Processing images
- * - Batch operations
- * - Scheduled tasks
- *
- * Jobs are queued in Redis and processed by workers.
  */
 
 initializeQueues();
@@ -148,15 +132,26 @@ initializeQueues();
  * ============================
  */
 
-const PORT = process.env.SERVER_PORT || 5000;
-const HOST = process.env.SERVER_HOST || '0.0.0.0';
+const PORT = config.server.port;
+const HOST = config.server.host;
 
-// Start listening on HTTP server (also handles WebSocket)
-httpServer.listen(PORT, HOST as any, () => {
-  logger.info(`🚀 Server running at http://${HOST}:${PORT}`);
-  logger.info(`📊 Health check: http://${HOST}:${PORT}/api/health`);
-  logger.info(`🌐 Socket.io ready for connections`);
-  logger.info(`📦 Job queues initialized with Redis`);
+async function bootstrap() {
+  // Ensure DB + Sequelize models are ready before accepting traffic.
+  await initializeChatDatabase();
+
+  // Start listening on HTTP server (also handles WebSocket)
+  httpServer.listen(PORT, HOST as any, () => {
+    logger.info(`🚀 Server running at http://${HOST}:${PORT}`);
+    logger.info(`📊 Health check: http://${HOST}:${PORT}/api/health`);
+    logger.info(`🔐 Auth API: http://${HOST}:${PORT}/api/auth`);
+    logger.info(`🌐 Socket.io ready for connections`);
+    logger.info(`📦 Job queues initialized with Redis`);
+  });
+}
+
+bootstrap().catch((err) => {
+  logger.error('Failed to start server', { error: err instanceof Error ? err.message : String(err) });
+  process.exit(1);
 });
 
 // Graceful shutdown

@@ -57,11 +57,33 @@ export const config = {
     port: parseInt(getEnv('REDIS_PORT', '6379'), 10),
   },
 
-  // Authentication secrets
+  // Authentication / encryption secrets
   secrets: {
+    // Backwards-compatible secret used by older examples
     jwtSecret: getEnv('JWT_SECRET', 'dev-secret-change-in-production'),
     jwtExpiry: getEnv('JWT_EXPIRY', '24h'),
+
+    // Prefer splitting access + refresh secrets so a refresh-token leak doesn't automatically
+    // imply access-token forgery.
+    jwtAccessSecret: getEnv('JWT_ACCESS_SECRET', getEnv('JWT_SECRET', 'dev-secret-change-in-production')),
+    jwtRefreshSecret: getEnv('JWT_REFRESH_SECRET', getEnv('JWT_SECRET', 'dev-secret-change-in-production')),
+
+    // Used for encrypting long-lived secrets (like TOTP seeds) at rest.
+    // In production, set this to a high-entropy value and rotate it carefully.
+    totpEncryptionKey: getEnv('TOTP_ENCRYPTION_KEY', getEnv('SESSION_SECRET', 'dev-secret-change-in-production')),
+
+    // Session secret (kept for existing examples)
     sessionSecret: getEnv('SESSION_SECRET', 'dev-secret-change-in-production'),
+  },
+
+  auth: {
+    // Short-lived access token: kept in memory on the frontend (not localStorage)
+    accessTokenExpiresIn: getEnv('JWT_ACCESS_EXPIRES_IN', '15m'),
+
+    // Longer-lived refresh token: stored in an httpOnly cookie, rotated on every refresh
+    refreshTokenExpiresIn: getEnv('JWT_REFRESH_EXPIRES_IN', '30d'),
+
+    refreshCookieName: getEnv('REFRESH_COOKIE_NAME', 'refresh_token'),
   },
 
   // CORS configuration

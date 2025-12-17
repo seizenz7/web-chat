@@ -4,10 +4,9 @@
  * Standardized error types for different scenarios.
  * Makes error handling consistent and predictable.
  *
- * Usage:
- *   throw new ValidationError('Email is required', { field: 'email' });
- *   throw new NotFoundError('User not found');
- *   throw new DatabaseError('Query failed');
+ * SECURITY NOTE (for beginners):
+ * - We intentionally keep error responses structured.
+ * - We avoid leaking sensitive details (stack traces, DB errors) in production.
  */
 
 /**
@@ -18,7 +17,8 @@ export class AppError extends Error {
   constructor(
     public message: string,
     public statusCode: number = 500,
-    public details?: any
+    public details?: any,
+    public code?: string
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -31,7 +31,7 @@ export class AppError extends Error {
  */
 export class ValidationError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, 400, details);
+    super(message, 400, details, 'VALIDATION_ERROR');
   }
 }
 
@@ -41,7 +41,7 @@ export class ValidationError extends AppError {
  */
 export class NotFoundError extends AppError {
   constructor(message: string = 'Resource not found') {
-    super(message, 404);
+    super(message, 404, undefined, 'NOT_FOUND');
   }
 }
 
@@ -50,8 +50,27 @@ export class NotFoundError extends AppError {
  * Thrown when user is not authenticated
  */
 export class UnauthorizedError extends AppError {
-  constructor(message: string = 'Authentication required') {
-    super(message, 401);
+  constructor(message: string = 'Authentication required', details?: any) {
+    super(message, 401, details, 'UNAUTHORIZED');
+  }
+}
+
+/**
+ * Two-factor required (401)
+ * Used when a user has TOTP enabled but didn't provide a code.
+ */
+export class TwoFactorRequiredError extends AppError {
+  constructor(message: string = 'Two-factor authentication code required') {
+    super(message, 401, undefined, 'TOTP_REQUIRED');
+  }
+}
+
+/**
+ * Invalid two-factor code (401)
+ */
+export class InvalidTwoFactorCodeError extends AppError {
+  constructor(message: string = 'Invalid two-factor authentication code') {
+    super(message, 401, undefined, 'TOTP_INVALID');
   }
 }
 
@@ -60,8 +79,28 @@ export class UnauthorizedError extends AppError {
  * Thrown when user lacks permission for an action
  */
 export class ForbiddenError extends AppError {
-  constructor(message: string = 'Access denied') {
-    super(message, 403);
+  constructor(message: string = 'Access denied', details?: any) {
+    super(message, 403, details, 'FORBIDDEN');
+  }
+}
+
+/**
+ * Conflict error (409 Conflict)
+ * Thrown when a resource already exists (e.g. duplicate email)
+ */
+export class ConflictError extends AppError {
+  constructor(message: string = 'Conflict', details?: any) {
+    super(message, 409, details, 'CONFLICT');
+  }
+}
+
+/**
+ * Too many requests (429)
+ * Thrown by rate limiting middleware
+ */
+export class TooManyRequestsError extends AppError {
+  constructor(message: string = 'Too many requests', details?: any) {
+    super(message, 429, details, 'RATE_LIMITED');
   }
 }
 
@@ -71,7 +110,7 @@ export class ForbiddenError extends AppError {
  */
 export class DatabaseError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, 500, details);
+    super(message, 500, details, 'DATABASE_ERROR');
   }
 }
 
@@ -81,7 +120,7 @@ export class DatabaseError extends AppError {
  */
 export class ExternalAPIError extends AppError {
   constructor(message: string, details?: any) {
-    super(message, 502, details);
+    super(message, 502, details, 'EXTERNAL_API_ERROR');
   }
 }
 
@@ -101,7 +140,8 @@ export function formatError(error: any, isDev: boolean = false) {
   if (isAppError(error)) {
     return {
       error: error.message,
-      ...(isDev && error.details && { details: error.details }),
+      ...(error.code && { code: error.code }),
+      ...(error.details && { details: error.details }),
       ...(isDev && error.stack && { stack: error.stack }),
     };
   }
